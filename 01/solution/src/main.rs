@@ -33,7 +33,7 @@ fn second_part(contents: &str) {
         for frequency in iterator {
             target_frequency += frequency;
             if set.contains(&target_frequency) {
-                println!("Reorcurring frequency {}", target_frequency);
+                println!("Recurring frequency {}", target_frequency);
                 return;
             }
 
