@@ -1,1 +1,1 @@
-/Users/tjeerdintveen/Workspace/adventofcode/02/solution/target/release/solution: /Users/tjeerdintveen/Workspace/adventofcode/02/solution/src/main.rs
+/Users/tjeerdintveen/Workspace/adventofcode/03/solution/target/release/solution: /Users/tjeerdintveen/Workspace/adventofcode/03/solution/src/main.rs

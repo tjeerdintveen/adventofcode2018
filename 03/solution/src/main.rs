@@ -65,17 +65,17 @@ fn first_part(contents: &str) {
         .filter_map(|s| s.ok())
         .collect();
 
-    let mut charmap = HashMap::<Point, i32>::new();
+    let mut pointmap = HashMap::<Point, i32>::new();
     for claim in claims {
         let points = points_from_claim(&claim);
 
         for point in points {
-            let entry = charmap.entry(point).or_insert(0);
+            let entry = pointmap.entry(point).or_insert(0);
             *entry += 1;
         }
     }
 
-    let total = charmap.iter().filter(|&(_, v)| v > &1 ).count();
+    let total = pointmap.iter().filter(|&(_, v)| v > &1 ).count();
     println!("total {}", total);
 }
 
@@ -87,12 +87,12 @@ fn second_part(contents: &str) {
         .filter_map(|s| s.ok())
         .collect();
 
-    let mut charmap = HashMap::<Point, i32>::new();
-    // populate charmap
+    let mut pointmap = HashMap::<Point, i32>::new();
+    // populate pointmap
     for claim in &claims {
         let points = points_from_claim(&claim);
         for point in points {
-            let entry = charmap.entry(point).or_insert(0);
+            let entry = pointmap.entry(point).or_insert(0);
             *entry += 1;
         }
     }
@@ -105,9 +105,10 @@ fn second_part(contents: &str) {
         let mut is_unclaimed = true;
 
         for point in points {
-            let entry = charmap.entry(point).or_insert(0);
-            if *entry > 1 {
-                is_unclaimed = false;
+            if let Some(&amount) = pointmap.get(&point) {
+                if amount > 1 {
+                    is_unclaimed = false
+                }
             }
         }
 
