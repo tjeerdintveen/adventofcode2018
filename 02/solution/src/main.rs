@@ -68,7 +68,7 @@ fn common_letters(lhs: &str, rhs: &str) -> Option<String> {
         if l != r {
             if found_mismatch {
                 return None
-            }
+    
 
             found_mismatch = true
         } else {

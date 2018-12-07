@@ -11,41 +11,35 @@ type GenError = Box<std::error::Error>;
 type GenResult<T> = Result<T, GenError>;
 type GuardId = String;
 
-fn main() {
+fn main() -> GenResult<()> {
     let mut f = File::open("input").expect("file not found");
     let mut contents = String::new();
     f.read_to_string(&mut contents)
         .expect("something went wrong reading the file");
 
-    first_part(&contents);
-    // second_part(&contents);
+    first_part(&contents)?;
+    second_part(&contents)?;
+    Ok(())
 }
 
-fn first_part(contents: &str) {
+fn first_part(contents: &str) -> GenResult<()> {
     let entries = parse_input(&contents);
-    // Build raw shifts
-    let shifts = build_shifts(entries).unwrap();
-
-    // Group shifts by guard id;
-    let mut grouped_shifts = HashMap::<GuardId, Vec<[bool; 60]>>::new();
-    for (guard_id, shift) in shifts {
-        let entry = grouped_shifts.entry(guard_id).or_insert(Vec::<[bool; 60]>::new());
-        entry.push(shift);
-    }
-
-    let mut sleepiest_guard = String::new();
-    let mut target_minutes_asleep = 0;
-    let mut target_reoccuring_minutes: [i32; 60] = [0; 60]; // Which minute the guard slept the most
+    // Build shifts
+    let grouped_shifts = build_shifts(entries)?;
 
     // Find guard that slept the most.
+    let mut sleepiest_guard = String::new();
+    let mut target_minutes_asleep = 0;
+    let mut target_minute = 0;
+
     for (guard_id, shifts) in grouped_shifts {
+        let (minute, _amount) = minutes_most_slept_on(&shifts);
+
         let mut minutes_asleep = 0;
-        let mut reoccuring_minutes: [i32; 60] = [0; 60]; // Which minute the guard slept the most
 
         for shift in shifts {
-            for (i, &was_sleeping) in shift.iter().enumerate() {
+            for &was_sleeping in shift.iter() {
                 if was_sleeping {
-                    reoccuring_minutes[i] += 1;
                     minutes_asleep += 1
                 }
             }
@@ -54,29 +48,75 @@ fn first_part(contents: &str) {
         if minutes_asleep > target_minutes_asleep {
             sleepiest_guard = guard_id;
             target_minutes_asleep = minutes_asleep;
-            target_reoccuring_minutes = reoccuring_minutes;
+            target_minute = minute;
         }
     }
 
-    let mut highest = 0;
-    let mut value: i32 = 0;
-    for (i, &v) in target_reoccuring_minutes.iter().enumerate() {
-        if v > value {
-            value = v;
-            highest = i;
-        }
-    }
-
-    let id: u32 = sleepiest_guard.parse().unwrap();
-    let end_result = id * highest as u32;
+    let id: u32 = sleepiest_guard.parse()?;
+    let end_result = id * target_minute as u32;
     println!("minute end result {}", end_result);
+    Ok(())
 }
 
-fn build_shifts(entries: Vec<Entry>) -> GenResult<Vec<(GuardId, [bool; 60])>> {
+
+fn second_part(contents: &str) -> GenResult<()> {
+    let entries = parse_input(&contents);
+    let grouped_shifts = build_shifts(entries)?;
+
+    let mut guards_minutes = HashMap::<GuardId, (usize, i32)>::new();
+
+    for (guard_id, shifts) in grouped_shifts {
+        let (minute, amount) = minutes_most_slept_on(&shifts);
+        guards_minutes.entry(guard_id).or_insert((minute, amount));
+    }
+
+    let guard = guards_minutes.iter().max_by_key(|v| v.1);
+
+    match guard {
+        Some((id, (minute, _amount))) => {
+            let idsize: usize = id.parse()?;
+            let answer = idsize * minute;
+            println!("Second answer is {}", answer);
+            Ok(())
+        },
+        None => panic!("No guard found"), // I don't want to make a custom error ;-)
+    }
+}
+
+type Minute = usize;
+// Find the minute that was slept on the most. Returns the minute and the amount.
+fn minutes_most_slept_on(shifts: &Vec<[bool; 60]>) -> (Minute, i32) {
+    let mut reoccuring_minutes: [i32; 60] = [0; 60];
+
+    for shift in shifts {
+        for (i, &was_sleeping) in shift.iter().enumerate() {
+            if was_sleeping {
+                reoccuring_minutes[i] += 1;
+            }
+        }
+    }
+
+    let mut minute = 0;
+    let mut amount: i32 = 0;
+    for (i, &v) in reoccuring_minutes.iter().enumerate() {
+        if v > amount {
+            amount = v;
+            minute = i;
+        }
+    }
+
+    (minute, amount)
+}
+
+
+
+// Shifts
+
+fn build_shifts(entries: Vec<Entry>) -> GenResult<HashMap<GuardId, Vec<[bool; 60]>>> {
 
     let mut asleep = [false; 60];
     let mut last_asleep_time: Option<NaiveDateTime> = None;
-    let mut results = Vec::<(GuardId, [bool; 60])>::new();
+    let mut shifts = Vec::<(GuardId, [bool; 60])>::new();
 
     // Values representing current shift
     let mut current_id: Option<GuardId> = None;
@@ -86,7 +126,7 @@ fn build_shifts(entries: Vec<Entry>) -> GenResult<Vec<(GuardId, [bool; 60])>> {
         match entry.entry_type {
             EntryType::ShiftStarted { id } => {
                 if let Some(id) = current_id {
-                    results.push((id, asleep));
+                    shifts.push((id, asleep));
                 }
                 current_id = Some(id);
                 last_asleep_time = None;
@@ -103,7 +143,13 @@ fn build_shifts(entries: Vec<Entry>) -> GenResult<Vec<(GuardId, [bool; 60])>> {
         }
     }
 
-    Ok(results)
+    // Group shifts by guard id;
+    let mut grouped_shifts = HashMap::<GuardId, Vec<[bool; 60]>>::new();
+    for (guard_id, shift) in shifts {
+        let entry = grouped_shifts.entry(guard_id).or_insert(Vec::<[bool; 60]>::new());
+        entry.push(shift);
+    }
+    Ok(grouped_shifts)
 }
 
 // Parsing
