@@ -1,0 +1,1 @@
+{"rustc":15235436946139347034,"features":"[\"clock\", \"default\", \"time\"]","target":8674342098391103092,"profile":731176819336294830,"deps":[["num-integer v0.1.39",16521811766227552310],["num-traits v0.2.6",3432448457857824759],["time v0.1.40",11184080105868034171]],"local":{"Precalculated":"0.4.6"},"rustflags":[]}
