@@ -1,6 +1,6 @@
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
-use std::collections::HashMap;
 use std::result::Result;
 extern crate chrono;
 use chrono::prelude::*;
@@ -24,7 +24,6 @@ fn main() -> GenResult<()> {
 
 fn first_part(contents: &str) -> GenResult<()> {
     let entries = parse_input(&contents);
-    // Build shifts
     let grouped_shifts = build_shifts(entries)?;
 
     // Find guard that slept the most.
@@ -58,7 +57,6 @@ fn first_part(contents: &str) -> GenResult<()> {
     Ok(())
 }
 
-
 fn second_part(contents: &str) -> GenResult<()> {
     let entries = parse_input(&contents);
     let grouped_shifts = build_shifts(entries)?;
@@ -78,7 +76,7 @@ fn second_part(contents: &str) -> GenResult<()> {
             let answer = idsize * minute;
             println!("Second answer is {}", answer);
             Ok(())
-        },
+        }
         None => panic!("No guard found"), // I don't want to make a custom error ;-)
     }
 }
@@ -108,12 +106,9 @@ fn minutes_most_slept_on(shifts: &Vec<[bool; 60]>) -> (Minute, i32) {
     (minute, amount)
 }
 
-
-
 // Shifts
 
 fn build_shifts(entries: Vec<Entry>) -> GenResult<HashMap<GuardId, Vec<[bool; 60]>>> {
-
     let mut asleep = [false; 60];
     let mut last_asleep_time: Option<NaiveDateTime> = None;
     let mut shifts = Vec::<(GuardId, [bool; 60])>::new();
@@ -122,7 +117,6 @@ fn build_shifts(entries: Vec<Entry>) -> GenResult<HashMap<GuardId, Vec<[bool; 60
     let mut current_id: Option<GuardId> = None;
 
     for entry in entries {
-
         match entry.entry_type {
             EntryType::ShiftStarted { id } => {
                 if let Some(id) = current_id {
@@ -131,22 +125,26 @@ fn build_shifts(entries: Vec<Entry>) -> GenResult<HashMap<GuardId, Vec<[bool; 60
                 current_id = Some(id);
                 last_asleep_time = None;
                 asleep = [false; 60];
-            },
+            }
             EntryType::WakesUp => {
-                for i in last_asleep_time.ok_or("No time available")?.minute()..entry.timestamp.minute() {
+                for i in
+                    last_asleep_time.ok_or("No time available")?.minute()..entry.timestamp.minute()
+                {
                     asleep[i as usize] = true;
                 }
-            },
+            }
             EntryType::FallsAsleep => {
                 last_asleep_time = Some(entry.timestamp);
-            },
+            }
         }
     }
 
     // Group shifts by guard id;
     let mut grouped_shifts = HashMap::<GuardId, Vec<[bool; 60]>>::new();
     for (guard_id, shift) in shifts {
-        let entry = grouped_shifts.entry(guard_id).or_insert(Vec::<[bool; 60]>::new());
+        let entry = grouped_shifts
+            .entry(guard_id)
+            .or_insert(Vec::<[bool; 60]>::new());
         entry.push(shift);
     }
     Ok(grouped_shifts)
@@ -155,20 +153,19 @@ fn build_shifts(entries: Vec<Entry>) -> GenResult<HashMap<GuardId, Vec<[bool; 60
 // Parsing
 
 fn parse_input(contents: &str) -> Vec<Entry> {
-    let mut entries: Vec<Entry> =
-        contents
+    let mut entries: Vec<Entry> = contents
         .lines()
         .map(|s| parse_string(s))
         .filter_map(|s| s.ok())
         .collect();
-    entries.sort_by(|lhs, rhs| lhs.timestamp.cmp(&rhs.timestamp) );
+    entries.sort_by(|lhs, rhs| lhs.timestamp.cmp(&rhs.timestamp));
     entries
 }
 
 fn parse_string(string: &str) -> GenResult<Entry> {
-    let splitted: Vec<_> = string.split(|c: char| {
-        return c == '[' || c == ']' || c == '#'
-    }).collect();
+    let splitted: Vec<_> = string
+        .split(|c: char| return c == '[' || c == ']' || c == '#')
+        .collect();
 
     // Date
     let parse_from_str = NaiveDateTime::parse_from_str;
@@ -178,11 +175,17 @@ fn parse_string(string: &str) -> GenResult<Entry> {
         let splitted: Vec<_> = splitted[3].split(' ').collect();
         let id = splitted[0];
         let entry_type: EntryType = id.parse()?;
-        let entry = Entry { timestamp: parsed_date, entry_type: entry_type };
+        let entry = Entry {
+            timestamp: parsed_date,
+            entry_type: entry_type,
+        };
         Ok(entry)
     } else {
         let entry_type: EntryType = splitted[2].parse()?;
-        let entry = Entry { timestamp: parsed_date, entry_type: entry_type };
+        let entry = Entry {
+            timestamp: parsed_date,
+            entry_type: entry_type,
+        };
         Ok(entry)
     }
 }
