@@ -19,14 +19,12 @@ fn solve_first(contents: &str) -> usize {
 }
 
 fn solve_second(contents: &str) -> usize {
-    // react_multi_pass(&contents).len()
     let mut shortest = 0;
     // Generate a-z
     (97u8..123u8).for_each(|i| {
         let ch = i as char;
         let length = react_multi_pass(&contents.replace(ch, "")).len();
 
-        println!("length for {} is {}", ch, length);
         if length < shortest || shortest == 0 {
             shortest = length
         }
@@ -54,13 +52,11 @@ fn react_single_pass(polymer: &str) -> (String, bool) {
     let reaction = polymer
         .trim()
         .chars()
-        .zip(// zipping the same chars, offet by one. Adding a EOF char.
-            polymer
-                .chars()
-                .skip(1)
-                .chain(eos.to_string().chars()))
+        .zip(
+            // zipping the same chars, offet by one. Adding a EOF char.
+            polymer.chars().skip(1).chain(eos.to_string().chars()),
+        )
         .fold(String::new(), |mut acc, (lhs, rhs)| {
-
             if had_match {
                 had_match = false;
                 return acc;
@@ -71,24 +67,24 @@ fn react_single_pass(polymer: &str) -> (String, bool) {
                 return acc;
             }
 
-            if are_polar_opposites(&lhs, &rhs) {
+            if are_polar_opposites(lhs, rhs) {
                 had_match = true;
                 did_react = true;
-                return acc;
+                acc
             } else {
                 acc.push(lhs);
-                return acc;
+                acc
             }
         });
 
     (reaction, did_react)
 }
 
-fn are_polar_opposites(lhs: &char, rhs: &char) -> bool {
-    if *lhs > *rhs {
-        return *lhs as u32 - *rhs as u32 == 32;
+fn are_polar_opposites(lhs: char, rhs: char) -> bool {
+    if lhs > rhs {
+        lhs as u32 - rhs as u32 == 32
     } else {
-        return *rhs as u32 - *lhs as u32 == 32;
+        rhs as u32 - lhs as u32 == 32
     }
 }
 
@@ -123,9 +119,18 @@ fn test_react_single_pass() {
 
 #[test]
 fn test_polar_opposites() {
-    assert!(are_polar_opposites(&'a', &'A'));
-    assert!(are_polar_opposites(&'A', &'a'));
-    assert!(!are_polar_opposites(&'a', &'a'), "Same chars shouldnt be polar opposites");
-    assert!(!are_polar_opposites(&'A', &'A'), "Same chars shouldnt be polar opposites");
-    assert!(!are_polar_opposites(&'b', &'a'), "diff chars shouldnt be polar opposites");
+    assert!(are_polar_opposites('a', 'A'));
+    assert!(are_polar_opposites('A', 'a'));
+    assert!(
+        !are_polar_opposites('a', 'a'),
+        "Same chars shouldnt be polar opposites"
+    );
+    assert!(
+        !are_polar_opposites('A', 'A'),
+        "Same chars shouldnt be polar opposites"
+    );
+    assert!(
+        !are_polar_opposites('b', 'a'),
+        "diff chars shouldnt be polar opposites"
+    );
 }
