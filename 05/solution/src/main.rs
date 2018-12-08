@@ -1,5 +1,3 @@
-// type GenError = Box<std::error::Error>;
-// type GenResult<T> = Result<T, GenError>;
 use std::fs::File;
 use std::io::prelude::*;
 
@@ -9,11 +7,31 @@ fn main() {
     f.read_to_string(&mut contents)
         .expect("something went wrong reading the file");
 
-    let first_answer = react_multi_pass(&contents).len();
+    let first_answer = solve_first(&contents);
     println!("first answer {}", first_answer);
 
-    let ch = 'a' as u8;
-    println!("ch {}", ch);
+    let second_answer = solve_second(&contents);
+    println!("Second answer {}", second_answer);
+}
+
+fn solve_first(contents: &str) -> usize {
+    react_multi_pass(&contents).len()
+}
+
+fn solve_second(contents: &str) -> usize {
+    // react_multi_pass(&contents).len()
+    let mut shortest = 0;
+    // Generate a-z
+    (97u8..123u8).for_each(|i| {
+        let ch = i as char;
+        let length = react_multi_pass(&contents.replace(ch, "")).len();
+
+        println!("length for {} is {}", ch, length);
+        if length < shortest || shortest == 0 {
+            shortest = length
+        }
+    });
+    shortest
 }
 
 fn react_multi_pass(polymer: &str) -> String {
@@ -21,7 +39,6 @@ fn react_multi_pass(polymer: &str) -> String {
     loop {
         let (string, did_react) = react_single_pass(&reaction);
         if !did_react {
-            // println!("{}", reaction);
             return reaction;
         }
 
@@ -30,23 +47,22 @@ fn react_multi_pass(polymer: &str) -> String {
 }
 
 fn react_single_pass(polymer: &str) -> (String, bool) {
-    // println!("Before {}", polymer);
     let eos = '!'; // custom end of string char
-    let mut skip = false;
+    let mut had_match = false;
     let mut did_react = false;
 
     let reaction = polymer
         .trim()
         .chars()
-    // zipping the same chars, offet by one. Adding a EOF char.
-        .zip(
+        .zip(// zipping the same chars, offet by one. Adding a EOF char.
             polymer
                 .chars()
                 .skip(1)
                 .chain(eos.to_string().chars()))
         .fold(String::new(), |mut acc, (lhs, rhs)| {
-            if skip {
-                skip = false;
+
+            if had_match {
+                had_match = false;
                 return acc;
             }
 
@@ -56,7 +72,7 @@ fn react_single_pass(polymer: &str) -> (String, bool) {
             }
 
             if are_polar_opposites(&lhs, &rhs) {
-                skip = true;
+                had_match = true;
                 did_react = true;
                 return acc;
             } else {
@@ -65,7 +81,6 @@ fn react_single_pass(polymer: &str) -> (String, bool) {
             }
         });
 
-    // println!("After did react {} {}", did_react, reaction);
     (reaction, did_react)
 }
 
@@ -75,12 +90,6 @@ fn are_polar_opposites(lhs: &char, rhs: &char) -> bool {
     } else {
         return *rhs as u32 - *lhs as u32 == 32;
     }
-}
-
-#[test]
-fn test_react_single_pass_removing_char() {
-    assert_eq!("", react_single_pass("aaABbaabBa", None));
-    assert_eq!("B", react_single_pass("aaABBbaabBa", None));
 }
 
 #[test]
