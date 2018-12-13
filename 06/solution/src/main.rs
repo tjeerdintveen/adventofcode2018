@@ -89,14 +89,12 @@ fn largest_finite_area(
     rectangle: &Rectangle,
     map: &HashMap<Coordinate, Option<(Id, Distance)>>,
 ) -> u32 {
-
     let mut disqualified_ids = HashSet::<Id>::new();
 
     let keys_values = map
         .iter()
         .filter_map(|(coordinate, value)| {
             value.and_then(|val| {
-
                 if disqualified_ids.contains(&val.0) {
                     return None;
                 }
@@ -123,60 +121,39 @@ fn largest_finite_area(
         .clone()
 }
 
-fn generate_map(points: &[Point]) -> (Rectangle, HashMap<Coordinate, Option<(Id, Distance)>>) {
-    let rectangle = rectangle_from_points(&points);
-    let mut map = HashMap::<Coordinate, Option<(Id, Distance)>>::new();
-    let first_point = &points[0];
-    // Generate coordinates, fill them with first point
-    for x in 0..=rectangle.bottom_right.x + 1{
+fn coordinates_from_rectangle(rectangle: &Rectangle) -> Vec<Coordinate> {
+    let mut coordinates = Vec::<Coordinate>::new();
+    for x in 0..=rectangle.bottom_right.x + 1 {
         for y in 0..=rectangle.bottom_right.y {
             let coordinate = Coordinate { x, y };
-            let distance = distance_between_points(&first_point, &coordinate);
-            map.insert(coordinate, Some((1, distance)));
+            coordinates.push(coordinate);
         }
     }
-    let clone = map.clone();
+    coordinates
+}
 
-    // figure out which coordinate has equal distances, to decide to nullify a coordinate, or to help decide if the coordinate belongs to a different point
-    let mut equal_distances = HashMap::<&Coordinate, Distance>::new();
+fn generate_map(points: &[Point]) -> (Rectangle, HashMap<Coordinate, Option<(Id, Distance)>>) {
+    let rectangle = rectangle_from_points(&points);
+    let coordinates = coordinates_from_rectangle(&rectangle);
+    let mut map = HashMap::<Coordinate, Option<(Id, Distance)>>::new();
 
-    // Improve, filtering nils
-    // TODO: Can we use zip and enumerate to generate ids and then collect into hashmap?
-    // Update map with all other points
-    for (id, point) in points.iter().skip(1).enumerate() {
-        for (coordinate, _values) in &clone {
+    for (id, point) in points.iter().enumerate() {
+        for coordinate in &coordinates {
+            let distance = distance_between_points(&point, &coordinate);
             map.entry(coordinate.clone())
                 .and_modify(|values| {
-                    match values {
-                        Some((_current_id, current_distance)) => {
-                            let distance = distance_between_points(&point, &coordinate);
-                            if distance < *current_distance {
-                                *values = Some((id + 2, distance));
-                            } else if distance == *current_distance {
-                                // clash, same distance for two points, nullify
-                                equal_distances.insert(coordinate, distance);
-                                *values = None;
-                            }
-                        },
-                        None => {
-                            // If a coordinate is emptied before, see if a new point can get a spot
-                            if let Some(current_distance) = equal_distances.get(coordinate) {
-                                let distance = distance_between_points(&point, &coordinate);
-                                // new point has shorter distance than earlier emptying.
-                                // Update the emptying dictionary (equal_distances)
-                                if distance < *current_distance {
-                                    // id + 2 because we skip the first point and the first point is 1
-                                    *values = Some((id + 2, distance));
-                                    equal_distances.insert(coordinate, distance);
-                                }
-                            }
-                        },
+                    if let Some((_current_id, current_distance)) = values {
+                        if distance < *current_distance {
+                            *values = Some((id, distance));
+                        } else if distance == *current_distance {
+                            *values = None;
+                        }
                     }
-                });
+                })
+                .or_insert_with(|| Some((id, distance)));
         }
     }
 
-    // print_map(&map, &(&rectangle.bottom_right.x + 2));
     (rectangle, map)
 }
 
