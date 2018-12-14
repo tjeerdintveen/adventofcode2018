@@ -28,55 +28,45 @@ fn main() {
 
     let first_answer = solve_first(&contents);
     println!("first answer {}", first_answer);
-    // let second_answer = solve_second(&contents);
-    // println!("Second answer {}", second_answer);
+    let second_answer = solve_second(&contents);
+    println!("Second answer {}", second_answer);
 }
 
 fn solve_first(contents: &str) -> u32 {
     let points: Vec<_> = parse(&contents);
-    let (rectangle, map) = generate_map(&points);
+    let (_coordinates, rectangle, map) = generate_map(&points);
     largest_finite_area(&rectangle, &map)
 }
-
-fn print_map(map: &HashMap<Coordinate, Option<(Id, Distance)>>, width: &u32) {
-    print!("\n");
-    let mut points: Vec<(&Point, Option<&Id>)> = map
-        .iter()
-        .map(|(coordinate, values)| {
-            if let Some((id, _)) = values {
-                (coordinate, Some(id))
-            } else {
-                (coordinate, None)
-            }
-        })
-        .collect();
-    points.sort_by(|(lhs, _), (rhs, _)| {
-        if lhs.y < rhs.y {
-            Ordering::Less
-        } else if lhs.y == rhs.y && lhs.x < rhs.x {
-            Ordering::Less
-        } else {
-            Ordering::Greater
-        }
-    });
-
-    let grid: Vec<_> = points.chunks(*width as usize).collect();
-
-    for &points in &grid {
-        for (_coordinate, id) in points {
-            if let Some(val) = id {
-                print!("{}", val);
-            } else {
-                print!("x");
-            }
-        }
-        print!("\n");
-    }
+fn solve_second(contents: &str) -> u32 {
+    let points: Vec<_> = parse(&contents);
+    let (coordinates, rectangle, map) = generate_map(&points);
+    largest_safe_area(&points, &coordinates, &rectangle, &map)
 }
 
-// fn solve_second(contents: &str) -> usize {
-//     0
-// }
+fn largest_safe_area(
+    points: &Vec<Point>,
+    coordinates: &Vec<Coordinate>,
+    rectangle: &Rectangle,
+    map: &HashMap<Coordinate, Option<(Id, Distance)>>,
+) -> u32 {
+    // let mut highest = 0;
+    let mut size = 0;
+    for coordinate in coordinates {
+        // let mut coordinates_in_region = HashSet::<&Coordinate>::new();
+        let mut total_distance = 0;
+        let mut current_count = 0;
+        for (id, point) in points.iter().enumerate() {
+            let distance = distance_between_points(&point, &coordinate);
+            total_distance += distance;
+        }
+
+        // if total_distance < 32 {
+        if total_distance < 10000 {
+            size += 1;
+        }
+    }
+    size
+}
 
 fn is_infinite_coordinate(coordinate: &Coordinate, rectangle: &Rectangle) -> bool {
     rectangle.top_left.x == coordinate.x
@@ -132,10 +122,17 @@ fn coordinates_from_rectangle(rectangle: &Rectangle) -> Vec<Coordinate> {
     coordinates
 }
 
-fn generate_map(points: &[Point]) -> (Rectangle, HashMap<Coordinate, Option<(Id, Distance)>>) {
+fn generate_map(
+    points: &[Point],
+) -> (
+    Vec<Coordinate>,
+    Rectangle,
+    HashMap<Coordinate, Option<(Id, Distance)>>,
+) {
     let rectangle = rectangle_from_points(&points);
     let coordinates = coordinates_from_rectangle(&rectangle);
     let mut map = HashMap::<Coordinate, Option<(Id, Distance)>>::new();
+    let mut nullified_distance = HashMap::<&Coordinate, Distance>::new();
 
     for (id, point) in points.iter().enumerate() {
         for coordinate in &coordinates {
@@ -147,6 +144,11 @@ fn generate_map(points: &[Point]) -> (Rectangle, HashMap<Coordinate, Option<(Id,
                             *values = Some((id, distance));
                         } else if distance == *current_distance {
                             *values = None;
+                            nullified_distance.insert(&coordinate, distance);
+                        }
+                    } else if let Some(&former_distance) = nullified_distance.get(&coordinate) {
+                        if distance < former_distance {
+                            *values = Some((id, distance));
                         }
                     }
                 })
@@ -154,7 +156,8 @@ fn generate_map(points: &[Point]) -> (Rectangle, HashMap<Coordinate, Option<(Id,
         }
     }
 
-    (rectangle, map)
+    // print_map(&map, &(rectangle.bottom_right.x + 2));
+    (coordinates, rectangle, map)
 }
 
 fn distance_between_points(lhs: &Point, rhs: &Point) -> Distance {
@@ -210,6 +213,42 @@ fn parse(contents: &str) -> Vec<Point> {
             }
         })
         .collect()
+}
+
+fn print_map(map: &HashMap<Coordinate, Option<(Id, Distance)>>, width: &u32) {
+    print!("\n");
+    let mut points: Vec<(&Point, Option<&Id>)> = map
+        .iter()
+        .map(|(coordinate, values)| {
+            if let Some((id, _)) = values {
+                (coordinate, Some(id))
+            } else {
+                (coordinate, None)
+            }
+        })
+        .collect();
+    points.sort_by(|(lhs, _), (rhs, _)| {
+        if lhs.y < rhs.y {
+            Ordering::Less
+        } else if lhs.y == rhs.y && lhs.x < rhs.x {
+            Ordering::Less
+        } else {
+            Ordering::Greater
+        }
+    });
+
+    let grid: Vec<_> = points.chunks(*width as usize).collect();
+
+    for &points in &grid {
+        for (_coordinate, id) in points {
+            if let Some(val) = id {
+                print!("{}", val);
+            } else {
+                print!("x");
+            }
+        }
+        print!("\n");
+    }
 }
 
 #[test]
