@@ -15,6 +15,7 @@ fn main() {
     println!("Expected CABDFE");
 }
 
+
 fn solve_first(char_map: &HashMap<char, Vec<char>>) -> String {
     // println!("char map {:?}", char_map);
     char_map.iter().for_each(|(k, v)| {
@@ -33,6 +34,7 @@ fn solve_first(char_map: &HashMap<char, Vec<char>>) -> String {
             Some(ch) => {
                 visited.insert(*ch.clone());
                 visit(&ch, &char_map, &mut visited, &mut result);
+                result.push(*ch.clone());
             },
             None => {
                 break;
@@ -43,95 +45,71 @@ fn solve_first(char_map: &HashMap<char, Vec<char>>) -> String {
     result.chars().rev().collect()
 }
 
-fn visit(parent: &char, char_map: &HashMap<char, Vec<char>>, mut visited: &mut HashSet<char>, mut acc: &mut String) {
-    match char_map.get(&parent) {
-        Some(chars) => {
-            //             let mut sorted_chars: Vec<_> = chars.iter().collect();
-            //             sorted_chars.sort_by(|lhs, rhs| rhs.cmp(lhs)); // a-z reverse sort
-            //             let mut result = String::new();
-            //             for ch in sorted_chars {
-            println!("parents {} chars {:?}", parent, chars);
-            for ch in chars {
-                if visited.contains(&ch) {
-                    continue;
+fn visit(ch: &char, char_map: &HashMap<char, Vec<char>>, mut visited: &mut HashSet<char>, mut acc: &mut String) {
+    let mut current_char: Option<char> = None;
+    let mut parent: char = ch.clone();
+
+    loop {
+        println!("A");
+        match char_map.get(&parent) {
+            Some(chars) => {
+                let mut sorted_chars: Vec<_> = chars.iter().collect();
+                sorted_chars.sort_by(|lhs, rhs| rhs.cmp(lhs)); // a-z reverse sort
+
+                let mut new_char: Option<char> = None;
+                for ch in sorted_chars {
+                    if !visited.contains(&ch) {
+                        new_char = Some(*ch);
+                        continue;
+                    }
                 }
-                visited.insert(ch.clone());
-                visit(&ch, &char_map, &mut visited, &mut acc);
-            }
-        },
-        None => {
-            
-        },
+
+                current_char = new_char;
+
+                match current_char {
+                    Some(ch) => {
+                        visited.insert(ch.clone());
+                        acc.push(ch.clone());
+                        parent = ch.clone();
+                        println!("Adding {}",ch);
+                    },
+                    None => break,
+                }
+            },
+            None => {
+                println!("C");
+                return
+            },
+        }
     }
 
-    acc.push(parent.clone());
 }
 
-// fn walk_through_rec(parent: char, char_map: &HashMap<char, Vec<char>>, visited: &mut HashSet<char>) -> String {
-// fn walk_through(char_map: &HashMap<char, Vec<char>>) -> String {
-//     let mut visited = HashSet::<char>::new();
-//     let mut result = String::new();
-//     loop {
-//         let mut keys: Vec<_> = char_map.keys().collect();
-//         keys.sort_by(|lhs, rhs| rhs.cmp(lhs) ); // a-z reverse sort
-//         let found = keys.iter().find(|ch| !visited.contains(&ch));
-//         match found {
-//             Some(ch) => {
-//                 println!("Searching root {}", ch);
-//                 visited.insert(*ch.clone());
-//                 let walked_result = walk_through_rec(**ch, &char_map, &mut visited);
-//                 result.push_str(&walked_result);
-//                 result.push(*ch.clone());
-//                 println!("Push walked nested result {} and top char {} result is now {}", &walked_result, ch, result);
-//                 // result.push(**ch);
-//             },
-//             None => {
-//                 println!("No chars left");
-//                 break;
-//             },
-//         }
-//     }
-
-//     result.chars().rev().collect()
-// }
-
-
-// fn walk_through_rec(parent: char, char_map: &HashMap<char, Vec<char>>, visited: &mut HashSet<char>) -> String {
-
-//     println!("Walking through {}", parent);
+// Recursive style.
+// fn visit(parent: &char, char_map: &HashMap<char, Vec<char>>, mut visited: &mut HashSet<char>, mut acc: &mut String) {
 //     match char_map.get(&parent) {
 //         Some(chars) => {
 //             let mut sorted_chars: Vec<_> = chars.iter().collect();
 //             sorted_chars.sort_by(|lhs, rhs| rhs.cmp(lhs)); // a-z reverse sort
-//             let mut result = String::new();
+//             println!("parents {} chars {:?}", parent, chars);
+//             let mut characters = Vec::<char>::new();
 //             for ch in sorted_chars {
 //                 if visited.contains(&ch) {
-//                     // println!("Already visited {}", &ch);
 //                     continue;
 //                 }
-
-//                 let walked_result = walk_through_rec(ch.clone(), &char_map, visited);
 //                 visited.insert(ch.clone());
-//                 // println!("Pushing {} to {}", ch, parent);
-//                 result.push_str(&walked_result);
-//                 result.push(ch.clone());
-
-//                 // if result != "" {
-//                 //     println!("char {} parent {}", &ch, &parent);
-//                 // }
-                
-//                 println!("Nested push walked nested result {} and current char {} result is now {} parent {}", &walked_result, ch, result, &parent);
-//                 // acc.push(ch.clone());
+//                 visit(&ch, &char_map, &mut visited, &mut acc);
+//                 characters.push(ch.clone());
 //             }
-
-//             result
+//             println!("did insert {:?} for parent {}", &characters, &parent);
 //         },
 //         None => {
-//             // TODO: Return optional
-//             String::new()
-//         }
+            
+//         },
 //     }
 
+//     println!("Pushing {}", &parent);
+//     acc.push(parent.clone());
 // }
 
 fn parse(contents: &str) -> HashMap<char, Vec<char>> {
