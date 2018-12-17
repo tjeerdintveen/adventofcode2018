@@ -66,7 +66,7 @@ fn indegrees(char_map: &HashMap<char, Vec<char>>) -> HashMap<char, u32> {
 }
 
 fn parse(contents: &str) -> HashMap<char, Vec<char>> {
-    let mut map = contents
+    contents
         .lines()
         .map(|str| {
             (str.chars().nth(5).unwrap(), str.chars().nth(36).unwrap())
@@ -83,8 +83,6 @@ fn parse(contents: &str) -> HashMap<char, Vec<char>> {
 
                 char_map
             },
-        );
-
-    map
+        )
 }
 
