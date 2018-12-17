@@ -49,7 +49,6 @@ fn find_roots(char_map: &HashMap<char, Vec<char>>, indegrees: &HashMap<char, u32
         }
     });
     roots.sort_by(|lhs, rhs| rhs.cmp(lhs));
-    roots.dedup();
     roots
 }
 
@@ -86,10 +85,6 @@ fn parse(contents: &str) -> HashMap<char, Vec<char>> {
             },
         );
 
-    for chars in map.values_mut() {
-        let mut sorted_chars: Vec<_> = chars.iter().collect();
-        sorted_chars.sort_by(|lhs, rhs| rhs.cmp(lhs)); // a-z reverse sort
-    }
     map
 }
 
