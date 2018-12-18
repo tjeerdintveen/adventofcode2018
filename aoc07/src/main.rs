@@ -70,13 +70,12 @@ fn main() {
     f.read_to_string(&mut contents)
         .expect("something went wrong reading the file");
     let char_map = parse(&contents);
-    let first_result = solve_first(&char_map);
-    let second_result = solve_second(&char_map);
+    let (first_result, second_result) = solve_second(&char_map);
     println!("First result is {:?}", first_result);
     println!("Second result is {}", second_result);
 }
 
-fn solve_second(char_map: &HashMap<char, Vec<char>>) -> u32 {
+fn solve(char_map: &HashMap<char, Vec<char>>) -> (String, u32) {
     let mut seconds_passed = 0;
 
     let mut indegrees = indegrees(&char_map);
@@ -95,11 +94,13 @@ fn solve_second(char_map: &HashMap<char, Vec<char>>) -> u32 {
         queue,
     };
 
+    let mut result = String::new();
     while !pool.is_empty() {
         let finished: Option<char> = pool.tick();
 
         seconds_passed += 1;
         if let Some(ch) = finished {
+            result.push(ch);
             // char is finished, add neighbors
             if let Some(neighbors) = &char_map.get(&ch) {
                 for neighbor in *neighbors {
@@ -114,7 +115,7 @@ fn solve_second(char_map: &HashMap<char, Vec<char>>) -> u32 {
         }
     }
 
-    seconds_passed - 1 // ignoring last loop
+    (result, seconds_passed - 1) // -1 to ignore last loop
 }
 
 fn duration_for_char(ch: char) -> u32 {
@@ -122,34 +123,35 @@ fn duration_for_char(ch: char) -> u32 {
     ch as u32 - 4
 }
 
-fn solve_first(char_map: &HashMap<char, Vec<char>>) -> String {
-    let mut result = String::new();
-    let mut indegrees = indegrees(&char_map);
+// If you only want the first answer
+// fn solve_first(char_map: &HashMap<char, Vec<char>>) -> String {
+//     let mut result = String::new();
+//     let mut indegrees = indegrees(&char_map);
 
-    let roots = find_roots(&char_map, &indegrees);
-    let mut queue: String = roots.iter().collect();
+//     let roots = find_roots(&char_map, &indegrees);
+//     let mut queue: String = roots.iter().collect();
 
-    while !queue.is_empty() {
-        // sort string
-        let mut chars: Vec<char> = queue.chars().collect();
-        chars.sort_by(|a, b| b.cmp(a));
-        queue = chars.iter().collect();
+//     while !queue.is_empty() {
+//         // sort string
+//         let mut chars: Vec<char> = queue.chars().collect();
+//         chars.sort_by(|a, b| b.cmp(a));
+//         queue = chars.iter().collect();
 
-        let popped = queue.pop().unwrap();
-        result.push(popped);
-        if let Some(neighbors) = &char_map.get(&popped) {
-            for neighbor in *neighbors {
-                let entry = indegrees.entry(*neighbor).or_insert(0);
-                *entry -= 1;
+//         let popped = queue.pop().unwrap();
+//         result.push(popped);
+//         if let Some(neighbors) = &char_map.get(&popped) {
+//             for neighbor in *neighbors {
+//                 let entry = indegrees.entry(*neighbor).or_insert(0);
+//                 *entry -= 1;
 
-                if *entry == 0 {
-                    queue.insert(0, neighbor.clone());
-                }
-            }
-        }
-    }
-    result
-}
+//                 if *entry == 0 {
+//                     queue.insert(0, neighbor.clone());
+//                 }
+//             }
+//         }
+//     }
+//     result
+// }
 
 fn find_roots(char_map: &HashMap<char, Vec<char>>, indegrees: &HashMap<char, u32>) -> Vec<char> {
     let mut roots = Vec::<char>::new();
